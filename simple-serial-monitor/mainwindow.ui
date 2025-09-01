@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>100</x>
+    <y>100</y>
+    <width>400</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Monitor de Sensores</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <!-- Botón de conexión -->
+    <widget class="QPushButton" name="connectButton">
+     <property name="text">
+      <string>Conectar</string>
+     </property>
+    </widget>
+    <!-- Estado de conexión -->
+    <widget class="QLabel" name="statusLabel">
+     <property name="text">
+      <string>Estado: Desconectado</string>
+     </property>
+    </widget>
+    <!-- Datos crudos recibidos -->
+    <widget class="QLabel" name="rawDataLabel">
+     <property name="text">
+      <string>Datos crudos: ---</string>
+     </property>
+    </widget>
+    <!-- Temperatura (separada) -->
+    <widget class="QLabel" name="tempLabel">
+     <property name="text">
+      <string>Temperatura: ---</string>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">color: #2c3e50; font-weight: bold;</string>
+     </property>
+    </widget>
+    <!-- Presión (separada) -->
+    <widget class="QLabel" name="pressLabel">
+     <property name="text">
+      <string>Presión: ---</string>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">color: #e74c3c; font-weight: bold;</string>
+     </property>
+    </widget>
+   </layout>
+  </widget>
+  <action name="actionSalir">
+   <property name="text">
+    <string>Salir</string>
+   </property>
+  </action>
+  <addaction name="actionSalir"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
