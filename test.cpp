@@ -1,98 +1,187 @@
-#include <windows.h>
 #include <iostream>
 #include <string>
 #include <thread>
 #include <random>
+#include <fcntl.h>   // Para open()
+#include <termios.h> // Para configurar el puerto serial
+#include <unistd.h>  // Para write(), close(), sleep()
 
-// Función para configurar el puerto serial
-HANDLE setupSerialPort(const char* portName) {
-    // Abre el puerto serial (ej: "COM3")
-    HANDLE hSerial = CreateFileA(portName,
-        GENERIC_WRITE,  // Solo necesitamos enviar datos
-        0,              // No compartir el puerto
-        NULL,           // Sin seguridad
-        OPEN_EXISTING,  // Abrir puerto existente
-        0,              // Sin atributos especiales
-        NULL);          // Sin plantilla
-
-    if (hSerial == INVALID_HANDLE_VALUE) {
-        std::cerr << "Error al abrir el puerto " << portName << std::endl;
-        return NULL;
+// Función para configurar el puerto serial de Linux (ej: /dev/pts/1)
+int setupSerialPort(const char* portPath) {
+    // Abre el puerto serial en modo escritura (O_WRONLY) y sin bloqueo (O_NONBLOCK)
+    int serialFD = open(portPath, O_WRONLY | O_NONBLOCK);
+    if (serialFD == -1) {
+        perror("Error opening serial port"); // Muestra el error (ej: "No such file or directory")
+        return -1;
     }
 
-    // Configurar parámetros del puerto (9600 baudios, 8 bits, sin paridad)
-    DCB dcbSerialParams = {0};
-    dcbSerialParams.DCBlength = sizeof(dcbSerialParams);
-    
-    if (!GetCommState(hSerial, &dcbSerialParams)) {
-        std::cerr << "Error al leer configuración del puerto" << std::endl;
-        CloseHandle(hSerial);
-        return NULL;
+    // Configura los parámetros del puerto (9600 baudios, 8 bits, sin paridad)
+    struct termios tty;
+    if (tcgetattr(serialFD, &tty) != 0) {
+        perror("Error getting serial port attributes");
+        close(serialFD);
+        return -1;
     }
 
-    dcbSerialParams.BaudRate = CBR_9600;    // Velocidad: 9600 baudios
-    dcbSerialParams.ByteSize = 8;           // 8 bits de datos
-    dcbSerialParams.StopBits = ONESTOPBIT;  // 1 bit de parada
-    dcbSerialParams.Parity = NOPARITY;      // Sin paridad
+    // Limpiar flags antiguos
+    tty.c_cflag &= ~CSIZE;    // Borra el tamaño de byte
+    tty.c_cflag |= CS8;       // 8 bits de datos
+    tty.c_cflag &= ~PARENB;   // Sin paridad
+    tty.c_cflag &= ~CSTOPB;   // 1 bit de parada
+    tty.c_cflag &= ~CRTSCTS;  // Sin control de flujo hardware
 
-    if (!SetCommState(hSerial, &dcbSerialParams)) {
-        std::cerr << "Error al configurar el puerto" << std::endl;
-        CloseHandle(hSerial);
-        return NULL;
+    // Configurar baudios (9600)
+    cfsetospeed(&tty, B9600); // Velocidad de escritura
+    cfsetispeed(&tty, B9600); // Velocidad de lectura (no usada aquí, pero se configura)
+
+    // Aplicar configuración
+    if (tcsetattr(serialFD, TCSANOW, &tty) != 0) {
+        perror("Error setting serial port attributes");
+        close(serialFD);
+        return -1;
     }
 
-    // Configurar temporizadores (no esencial para este ejemplo)
-    COMMTIMEOUTS timeouts = {0};
-    timeouts.WriteTotalTimeoutConstant = 50;
-    timeouts.WriteTotalTimeoutMultiplier = 10;
-    SetCommTimeouts(hSerial, &timeouts);
-
-    return hSerial;
+    return serialFD; // Devuelve el "descriptor" del puerto (para enviar datos)
 }
 
 // Función para enviar datos por el puerto serial
-void sendData(HANDLE hSerial, const std::string& data) {
-    DWORD bytesWritten;
-    // Convertir string a bytes y enviar
-    if (!WriteFile(hSerial, data.c_str(), data.size(), &bytesWritten, NULL)) {
-        std::cerr << "Error al enviar datos" << std::endl;
+void sendData(int serialFD, const std::string& data) {
+    ssize_t bytesWritten = write(serialFD, data.c_str(), data.size());
+    if (bytesWritten == -1) {
+        perror("Error writing data");
     } else {
-        std::cout << "Enviado: " << data << std::endl;
+        std::cout << "Sent: " << data; // No usamos std::endl para evitar saltos extra
     }
 }
 
 int main() {
-    // Configurar el puerto COM3 (el puerto virtual que creaste con VSPD)
-    HANDLE hSerial = setupSerialPort("COM3");
-    if (hSerial == NULL) {
+    // Configura el puerto virtual de Linux (el que anotaste: /dev/pts/1)
+    const char* serialPort = "/dev/pts/1";
+    int serialFD = setupSerialPort(serialPort);
+    if (serialFD == -1) {
         return 1; // Salir si hay error
     }
 
-    // Generador de números aleatorios para simular variaciones en los datos
+    // Generador de números aleatorios para simular datos del sensor
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_real_distribution<> tempDist(20.0, 30.0);  // Temp: 20-30°C
-    std::uniform_real_distribution<> pressDist(0.8, 1.2);   // Presión: 0.8-1.2 MPa
+    std::uniform_real_distribution<> pressDist(0.8, 1.2);   // Pressure: 0.8-1.2 MPa
 
     // Enviar datos cada segundo
-    std::cout << "Simulando sensor... (Presiona Ctrl+C para detener)" << std::endl;
+    std::cout << "Simulating sensor... (Press Ctrl+C to stop)\n";
     while (true) {
         // Generar datos ficticios
         double temperature = tempDist(gen);
         double pressure = pressDist(gen);
 
-        // Formatear los datos como string (ej: "Temp=25.3,Press=1.05\n")
-        std::string data = "Temp=" + std::to_string(temperature) + 
-                          ",Press=" + std::to_string(pressure) + "\n";
+        // Formatear datos (ej: "Temp=25.3,Press=1.05\n")
+        // Usamos printf para controlar decimales (mejor que std::to_string)
+        char dataBuffer[50];
+        snprintf(dataBuffer, sizeof(dataBuffer), "Temp=%.1f,Press=%.2f\n", temperature, pressure);
+        std::string data = dataBuffer;
 
-        // Enviar por COM3
-        sendData(hSerial, data);
+        // Enviar datos a /dev/pts/1
+        sendData(serialFD, data);
 
-        // Esperar 1 segundo antes de enviar el siguiente dato
+        // Esperar 1 segundo
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
-    // Cerrar el puerto (en práctica, el bucle while(true) nunca llega aquí)
-    CloseHandle(hSerial);
+    // Cerrar el puerto (el bucle while(true) nunca llega aquí, pero es buena práctica)
+    close(serialFD);
+    return 0;
+}#include <iostream>
+#include <string>
+#include <thread>
+#include <random>
+#include <fcntl.h>   // Para open()
+#include <termios.h> // Para configurar el puerto serial
+#include <unistd.h>  // Para write(), close(), sleep()
+
+// Función para configurar el puerto serial de Linux (ej: /dev/pts/1)
+int setupSerialPort(const char* portPath) {
+    // Abre el puerto serial en modo escritura (O_WRONLY) y sin bloqueo (O_NONBLOCK)
+    int serialFD = open(portPath, O_WRONLY | O_NONBLOCK);
+    if (serialFD == -1) {
+        perror("Error opening serial port"); // Muestra el error (ej: "No such file or directory")
+        return -1;
+    }
+
+    // Configura los parámetros del puerto (9600 baudios, 8 bits, sin paridad)
+    struct termios tty;
+    if (tcgetattr(serialFD, &tty) != 0) {
+        perror("Error getting serial port attributes");
+        close(serialFD);
+        return -1;
+    }
+
+    // Limpiar flags antiguos
+    tty.c_cflag &= ~CSIZE;    // Borra el tamaño de byte
+    tty.c_cflag |= CS8;       // 8 bits de datos
+    tty.c_cflag &= ~PARENB;   // Sin paridad
+    tty.c_cflag &= ~CSTOPB;   // 1 bit de parada
+    tty.c_cflag &= ~CRTSCTS;  // Sin control de flujo hardware
+
+    // Configurar baudios (9600)
+    cfsetospeed(&tty, B9600); // Velocidad de escritura
+    cfsetispeed(&tty, B9600); // Velocidad de lectura (no usada aquí, pero se configura)
+
+    // Aplicar configuración
+    if (tcsetattr(serialFD, TCSANOW, &tty) != 0) {
+        perror("Error setting serial port attributes");
+        close(serialFD);
+        return -1;
+    }
+
+    return serialFD; // Devuelve el "descriptor" del puerto (para enviar datos)
+}
+
+// Función para enviar datos por el puerto serial
+void sendData(int serialFD, const std::string& data) {
+    ssize_t bytesWritten = write(serialFD, data.c_str(), data.size());
+    if (bytesWritten == -1) {
+        perror("Error writing data");
+    } else {
+        std::cout << "Sent: " << data; // No usamos std::endl para evitar saltos extra
+    }
+}
+
+int main() {
+    // Configura el puerto virtual de Linux (el que anotaste: /dev/pts/1)
+    const char* serialPort = "/dev/pts/1";
+    int serialFD = setupSerialPort(serialPort);
+    if (serialFD == -1) {
+        return 1; // Salir si hay error
+    }
+
+    // Generador de números aleatorios para simular datos del sensor
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<> tempDist(20.0, 30.0);  // Temp: 20-30°C
+    std::uniform_real_distribution<> pressDist(0.8, 1.2);   // Pressure: 0.8-1.2 MPa
+
+    // Enviar datos cada segundo
+    std::cout << "Simulating sensor... (Press Ctrl+C to stop)\n";
+    while (true) {
+        // Generar datos ficticios
+        double temperature = tempDist(gen);
+        double pressure = pressDist(gen);
+
+        // Formatear datos (ej: "Temp=25.3,Press=1.05\n")
+        // Usamos printf para controlar decimales (mejor que std::to_string)
+        char dataBuffer[50];
+        snprintf(dataBuffer, sizeof(dataBuffer), "Temp=%.1f,Press=%.2f\n", temperature, pressure);
+        std::string data = dataBuffer;
+
+        // Enviar datos a /dev/pts/1
+        sendData(serialFD, data);
+
+        // Esperar 1 segundo
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+
+    // Cerrar el puerto (el bucle while(true) nunca llega aquí, pero es buena práctica)
+    close(serialFD);
     return 0;
 }
