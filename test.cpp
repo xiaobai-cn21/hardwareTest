@@ -74,13 +74,13 @@ int main() {
         std::uniform_real_distribution<> electPress(2.5, 4.0);
         std::uniform_real_distribution<> vel(15000, 3000);
         std::uniform_real_distribution<> temp2(35, 60);
-
+    }
     else if(equipment_number == 2) {
         std::uniform_real_distribution<> temp(40.0, 80.0);  
         std::uniform_real_distribution<> vibr(0.5, 2.0);   
         std::uniform_real_distribution<> elect(150.0, 250.0);
         std::uniform_real_distribution<> electPress(2.5, 4.0);
-        std::uniform_real_distribution<> vel(15000, 3000);
+        std::uniform_real_distribution<> vel(15000, 30000);
         std::uniform_real_distribution<> temp2(35, 60);
     } else {
         std::uniform_real_distribution<> temp(40.0, 80.0);  
@@ -98,7 +98,7 @@ int main() {
     std::cout << "Simulating sensor... (Press Ctrl+C to stop)\n";
     while (true) {
         // Generar datos ficticios
-        double temp = tem(gen);
+        double temp = temp(gen);
         double vibr = vibr(gen);
         double elect = elect(gen);
         double electPress = electPress(gen);
@@ -115,7 +115,7 @@ int main() {
         润滑系统压力=%.2f,
         电机转速=%.2f,
         润滑油温度=%.2f", 
-        temp, vibre, elect, electPress, vel, temp2 
+        temp, vibr, elect, electPress, vel, temp2 
     );
         std::string data = dataBuffer;
 
