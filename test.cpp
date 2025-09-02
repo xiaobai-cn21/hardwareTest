@@ -63,22 +63,50 @@ int main() {
     }
 
     // Generador de números aleatorios para simular datos del sensor
+    //选要用的设备
+    std::cout << "选您的设备:(1)重型机械电机, (2)能源站输油泵(3)汽车装配机器人" << std::endl;
+    std::int equipment_number;
+    std::cin >> equipment_number;
+    if (equipment_number == 1) {
+        std::uniform_real_distribution<> temp(40.0, 80.0);  
+        std::uniform_real_distribution<> vibr(0.5, 2.0);   
+        std::uniform_real_distribution<> elect(150.0, 250.0);
+        std::uniform_real_distribution<> electPress(2.5, 4.0);
+        std::uniform_real_distribution<> vel(15000, 3000);
+        std::uniform_real_distribution<> temp2(35, 60);
+
+    else if(equipment_number == 2) {
+
+    } else {
+
+    }
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_real_distribution<> tempDist(20.0, 30.0);  // Temp: 20-30°C
-    std::uniform_real_distribution<> pressDist(0.8, 1.2);   // Pressure: 0.8-1.2 MPa
+   
 
     // Enviar datos cada segundo
     std::cout << "Simulating sensor... (Press Ctrl+C to stop)\n";
     while (true) {
         // Generar datos ficticios
-        double temperature = tempDist(gen);
-        double pressure = pressDist(gen);
+        double temp = tem(gen);
+        double vibr = vibr(gen);
+        double elect = elect(gen);
+        double electPress = electPress(gen);
+        double vel = vel(gen);
+        double temp2 = temp2(gen);
 
         // Formatear datos (ej: "Temp=25.3,Press=1.05\n")
         // Usamos printf para controlar decimales (mejor que std::to_string)
-        char dataBuffer[50];
-        snprintf(dataBuffer, sizeof(dataBuffer), "Temp=%.1f,Press=%.2f\n", temperature, pressure);
+        char dataBuffer[500];
+        snprintf(dataBuffer, sizeof(dataBuffer), 
+        "电机绕组温度=%.1f,
+        电机机壳振动=%.2f,
+        电机启动电流=%.2f
+        润滑系统压力=%.2f,
+        电机转速=%.2f,
+        润滑油温度=%.2f", 
+        temp, vibre, elect, electPress, vel, temp2 
+    );
         std::string data = dataBuffer;
 
         // Enviar datos a /dev/pts/1
