@@ -65,7 +65,7 @@ int main() {
     // Generador de números aleatorios para simular datos del sensor
     //选要用的设备
     std::cout << "选您的设备:(1)重型机械电机, (2)能源站输油泵(3)汽车装配机器人" << std::endl;
-    std::int equipment_number;
+    int equipment_number;
     std::cin >> equipment_number;
     if (equipment_number == 1) {
         std::uniform_real_distribution<> temp(40.0, 80.0);  
