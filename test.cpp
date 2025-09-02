@@ -56,7 +56,7 @@ void sendData(int serialFD, const std::string& data) {
 
 int main() {
     // Configura el puerto virtual de Linux (el que anotaste: /dev/pts/1)
-    const char* serialPort = "/dev/pts/1";
+    const char* serialPort = "/dev/pts/2";
     int serialFD = setupSerialPort(serialPort);
     if (serialFD == -1) {
         return 1; // Salir si hay error
@@ -76,9 +76,19 @@ int main() {
         std::uniform_real_distribution<> temp2(35, 60);
 
     else if(equipment_number == 2) {
-
+        std::uniform_real_distribution<> temp(40.0, 80.0);  
+        std::uniform_real_distribution<> vibr(0.5, 2.0);   
+        std::uniform_real_distribution<> elect(150.0, 250.0);
+        std::uniform_real_distribution<> electPress(2.5, 4.0);
+        std::uniform_real_distribution<> vel(15000, 3000);
+        std::uniform_real_distribution<> temp2(35, 60);
     } else {
-
+        std::uniform_real_distribution<> temp(40.0, 80.0);  
+        std::uniform_real_distribution<> vibr(0.5, 2.0);   
+        std::uniform_real_distribution<> elect(150.0, 250.0);
+        std::uniform_real_distribution<> electPress(2.5, 4.0);
+        std::uniform_real_distribution<> vel(15000, 3000);
+        std::uniform_real_distribution<> temp2(35, 60);
     }
     std::random_device rd;
     std::mt19937 gen(rd());
