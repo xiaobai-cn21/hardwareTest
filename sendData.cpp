@@ -1,4 +1,3 @@
-// client.cpp
 #include <iostream>
 #include <cstring>
 #include <sys/socket.h>
@@ -31,15 +30,28 @@ int main() {
     }
     std::cout << "Connected to server!\n";
 
-    // 4. Send a string to server
-    std::string msg = "Hello, server!";
-    ssize_t sent = send(sockfd, msg.c_str(), msg.size(), 0);
+    // 4. Build CREATE_MEETING message (11 bytes)
+    char msg[11];
+    msg[0] = '$';
+
+    uint16_t msgType = htons(1); // Suppose CREATE_MEETING is 1
+    memcpy(msg + 1, &msgType, 2);
+
+    uint32_t ip = htonl(0); // Not used, set to 0
+    memcpy(msg + 3, &ip, 4);
+
+    uint32_t dataSize = htonl(0); // No extra data
+    memcpy(msg + 7, &dataSize, 4);
+
+    msg[10] = '#'; // End with #
+
+    ssize_t sent = send(sockfd, msg, 11, 0);
     if (sent < 0) {
         std::cerr << "Send failed\n";
         close(sockfd);
         return 1;
     }
-    std::cout << "Sent message to server.\n";
+    std::cout << "Sent CREATE_MEETING message to server.\n";
 
     // 5. Try to receive response from server
     char buf[1024] = {0};
