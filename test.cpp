@@ -67,29 +67,13 @@ int main() {
     std::cout << "选您的设备:(1)重型机械电机, (2)能源站输油泵(3)汽车装配机器人" << std::endl;
     int equipment_number;
     std::cin >> equipment_number;
-    if (equipment_number == 1) {
         std::uniform_real_distribution<> temp1(40.0, 80.0);  
         std::uniform_real_distribution<> vibr1(0.5, 2.0);   
         std::uniform_real_distribution<> elect1(150.0, 250.0);
         std::uniform_real_distribution<> electPress1(2.5, 4.0);
         std::uniform_real_distribution<> vel1(15000, 3000);
         std::uniform_real_distribution<> temp21(35, 60);
-    }
-    else if(equipment_number == 2) {
-        std::uniform_real_distribution<> temp1(40.0, 80.0);  
-        std::uniform_real_distribution<> vibr1(0.5, 2.0);   
-        std::uniform_real_distribution<> elect1(150.0, 250.0);
-        std::uniform_real_distribution<> electPress1(2.5, 4.0);
-        std::uniform_real_distribution<> vel1(15000, 3000);
-        std::uniform_real_distribution<> temp21(35, 60);
-    } else {
-        std::uniform_real_distribution<> temp1(40.0, 80.0);  
-        std::uniform_real_distribution<> vibr1(0.5, 2.0);   
-        std::uniform_real_distribution<> elect1(150.0, 250.0);
-        std::uniform_real_distribution<> electPress1(2.5, 4.0);
-        std::uniform_real_distribution<> vel1(15000, 3000);
-        std::uniform_real_distribution<> temp21(35, 60);
-    }
+    
     std::random_device rd;
     std::mt19937 gen(rd());
    
