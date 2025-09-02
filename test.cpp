@@ -92,7 +92,7 @@ int main() {
         // Formatear datos (ej: "Temp=25.3,Press=1.05\n")
         // Usamos printf para controlar decimales (mejor que std::to_string)
         char dataBuffer[500];
-        snprintf(dataBuffer, sizeof(dataBuffer), "电机绕组温度=%.1f,电机机壳振动=%.2f,电机启动电流=%.2f润滑系统压力=%.2f,电机转速=%.2f,润滑油温度=%.2f", temp, vibr, elect, electPress, vel, temp2 );
+        snprintf(dataBuffer, sizeof(dataBuffer), "电机绕组温度=%.1f,电机机壳振动=%.2f,电机启动电流=%.2f润滑系统压力=%.2f,电机转速=%.2f,润滑油温度=%.2f\n", temp, vibr, elect, electPress, vel, temp2 );
         std::string data = dataBuffer;
 
         // Enviar datos a /dev/pts/1
