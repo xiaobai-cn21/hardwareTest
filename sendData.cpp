@@ -66,5 +66,4 @@ int main() {
 
     // 6. Close socket
     close(sockfd);
-    return 0;
-}
+    return
